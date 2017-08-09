@@ -1,0 +1,8 @@
+{
+  "name": "speciesApi",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:JohanCodinha/vicSpeciesApi.git",
+  "author": "Johan Codinha",
+  "license": "MIT"
+}
