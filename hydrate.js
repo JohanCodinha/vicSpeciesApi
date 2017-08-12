@@ -1,134 +1,149 @@
-let fs = require('fs');
-let mongoose = require('mongoose');
-let aws = require('aws-sdk');
-let https = require('https');
-let Specie = require('./SpecieModel');
-let searchMuseumSpecies = require('./api/museumVic');
-let searchALASpecies = require('./api/atlasLivingAus');
-let searchHerbariumSpecies = require('./api/herbarium');
+const mongoose = require('mongoose');
+const aws = require('aws-sdk');
+const https = require('https');
+const Specie = require('./SpecieModel');
+const searchMuseumSpecies = require('./api/museumVic');
+const searchALASpecies = require('./api/atlasLivingAus');
+const searchHerbariumSpecies = require('./api/herbarium');
 
-let BUCKET_NAME = 'vba-species-image';
 aws.config.loadFromPath('./awsConfig.json');
-let s3 = new aws.S3();
+const s3 = new aws.S3();
 
-let db = mongoose.connection;
+const db = mongoose.connection;
 mongoose.connect('mongodb://localhost:27017/test', {
   useMongoClient: true,
 });
 mongoose.Promise = global.Promise;
 
 db.on('error', console.error.bind(console, 'connection error:'));
-db.once('openUri', function() {
+db.once('openUri', () => {
   console.log('connected to db');
 });
 
-async function fetchMetadata (scientificName,commonName, taxonType){
-  const taxonomy = { scientificName, commonName };
+async function fetchMetadata(scientificName, commonName, taxonType) {
+  /* eslint-disable no-return-await */
   try {
+    const taxonomy = { scientificName, commonName };
     if (taxonType === 'Flora') {
       return await searchHerbariumSpecies(taxonomy) ||
         await searchALASpecies(taxonomy) ||
         await searchMuseumSpecies(taxonomy);
-    } else {
-      return await searchMuseumSpecies(taxonomy) ||
-        await searchALASpecies(taxonomy) ||
-        await searchHerbariumSpecies(taxonomy);
     }
-  } catch (err) {
-    console.log(err);
+    return await searchMuseumSpecies(taxonomy) ||
+      await searchALASpecies(taxonomy) ||
+      await searchHerbariumSpecies(taxonomy);
+  } catch (error) {
+    console.log(error);
+    return error;
   }
-};
+}
 
 function uploadFile(remoteFilename, file, contentType) {
-  let image = new Buffer(file, 'binary');
-  debugger;
+  const BUCKET_NAME = 'vba-species-image';
+  const image = new Buffer(file, 'binary');
+  // debugger;
   return new Promise((resolve, reject) => {
-    s3.putObject({
+    s3.upload({
       ACL: 'public-read',
       Bucket: BUCKET_NAME,
-      Key: `${Date.now()}.jpg`,// remoteFilename,
+      Key: remoteFilename, // `${Date.now()}.jpg`,
       Body: image,
       ContentType: contentType,
-    }, (error, response) => error
-      ? reject(error)
-      : resolve(response));
+    }, (error, data) => {
+      if (error) return reject(error);
+      return resolve(data);
+    });
   });
-};
+}
 
 function downloadFile(url) {
-  return new Promise((resolve, reject) => https.get(url, function(res){
-    let contentType = res.headers['content-type'];
-    let imagedata = ''
-    res.setEncoding('binary')
-    res.on('data', function(chunk){
-        imagedata += chunk
-    })
-    res.on('end', function(){
-      return resolve({
-        data: imagedata,
-        contentType,
-      });
-    })
-  }));
-};
+  return new Promise((resolve, reject) => {
+    if (typeof url !== 'string') return reject(new Error(`Url should be a string but is ${typeof url}`));
+    return https.get(url, (res) => {
+      if (res.statusCode !== 200) {
+        console.log(res.statusCode);
+        reject(new Error(`Network error, status code: ${res.statusCode}`));
+      }
+      const contentType = res.headers['content-type'];
+      let imagedata = '';
+      res.setEncoding('binary');
+      try {
+        res.on('data', (chunk) => {
+          imagedata += chunk;
+        });
+        res.on('end', () => {
+          resolve({
+            data: imagedata,
+            contentType,
+          });
+        });
+        res.on('error', (err) => {
+          reject(err);
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    });
+  });
+}
 
-(async function (){
-  let species = await Specie.find();
-  for (specie of species.slice(0,5)) {
+(async function asyncIIFE() {
+  const species = await Specie.find();
+  species.slice(0, 5).forEach(async (specie) => {
     const { scientificName, commonName, taxonType } = specie;
     const data = await fetchMetadata(scientificName, commonName, taxonType);
-    console.log(data);
+    console.log(!!data);
     console.log(`${specie.taxonId} : ${data.images.length} found for ${commonName}`);
     const description = {
       source: (data.distribution ||
         data.habitat || data.biology)
-         ? data.source
-         : undefined,
+        ? data.source
+        : undefined,
       distribution: data.distribution || undefined,
       habitat: data.habitat || undefined,
       biology: data.biology || undefined,
     };
     if (data.images.length) {
-      const images = data.images.map(img => {
-        return {
-          url: img.medium,
-          source: img.source,
-          creator: img.creator,
-        }
-      });
-      const fetchAndUploadPromises = images.map(image => {
-        return new Promise(async (resolve, reject) => {
+      // const images = data.images.map(img => ({
+      //   url: img.medium,
+      //   source: img.source,
+      //   creator: img.creator,
+      // }));
+      const fetchAndUploadPromises = data.images
+        .map(image => new Promise(async (resolve, reject) => {
+          const imageUrl = image.medium;
           try {
-            console.log(image.url);
-            if (!image.url) return resolve();
-            const downloadedImage = await downloadFile(image.url);
-            debugger;
-            const uploadStatus = await uploadFile(
-              /[^\/]+(?=\/$|$)/.exec(image.url)[0],
+            if (!imageUrl) return resolve();
+            const downloadedImage = await downloadFile(imageUrl);
+            console.log(`Downloaded : ${/[^/]+(?=\/$|$)/.exec(imageUrl)[0]}`);
+            const { Location: location } = await uploadFile(
+              /[^/]+(?=\/$|$)/.exec(imageUrl)[0],
               downloadedImage.data,
               downloadedImage.contentType);
-            resolve(uploadStatus);
+            // console.log(location);
+            return resolve({
+              url: location,
+              source: image.source,
+              creator: image.creator,
+            });
           } catch (error) {
-            reject(error);
+            return reject(error);
           }
-        });
-      });
+        }));
       try {
-        const result = await Promise.all(fetchAndUploadPromises);
-        const saved = await specie.update({images, description});
-        console.log(result);
+        const images = await Promise.all(fetchAndUploadPromises);
+        const saved = await specie.update({ images, description });
+        console.log(images, saved);
       } catch (err) {
-        console.log(err)
+        console.log(err);
+      }
+    } else {
+      try {
+        const saved = await specie.update({ description });
+        console.log(saved);
+      } catch (error) {
+        console.log(error);
       }
     }
-    try {
-      const saved = await specie.update({description});
-      console.log(saved);
-    } catch (error) {
-      console.log(error);
-    }
-  }
-  process.exit();
-
-})()
-
+  });
+}());

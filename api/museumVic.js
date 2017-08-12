@@ -60,4 +60,4 @@ const searchMuseumSpecies = async (taxonomy) => {
   return specieData;
 };
 
-module.exports = searchHerbariumSpecies;
+module.exports = searchMuseumSpecies;

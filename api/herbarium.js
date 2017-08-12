@@ -1,6 +1,6 @@
-let axios = require('axios');
+const axios = require('axios');
 
-function validateResponse (response, taxonomy) {
+function validateResponse(response, taxonomy) {
   if (!response) return false;
   const validSpecie = response.data.data.filter((specie) => {
     const resultScientificName = specie.scientificName
@@ -15,14 +15,15 @@ function validateResponse (response, taxonomy) {
   return validSpecie || false;
 }
 
-function fetchHerbariumSpecies (taxonomy) {
+function fetchHerbariumSpecies(taxonomy) {
   return axios.get('https://vicflora.rbg.vic.gov.au/api/images', {
     params: {
       'filter[taxonName]': taxonomy.scientificName,
     },
   }).catch(error => console.log(error));
 }
-const searchHerbariumSpecies = async (taxonomy) => {
+
+async function searchHerbariumSpecies(taxonomy) {
   const response = await fetchHerbariumSpecies(taxonomy);
   const images = validateResponse(response, taxonomy);
   if (!images.length) return false;
@@ -52,12 +53,11 @@ const searchHerbariumSpecies = async (taxonomy) => {
           .find(d => d.variant === 'thumbnail').accessURI,
         // caption: media.caption,
         creator: media.creator,
-        source: media.source || 'Royal Botanic Garden Victoria',
+        // source: media.source || 'Royal Botanic Garden Victoria',
       };
     }),
   };
-  // debugger;
   return specieData;
-};
+}
 
 module.exports = searchHerbariumSpecies;

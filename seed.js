@@ -72,12 +72,9 @@ function formatJson(specie) {
 
 (async function asyncIIFE() {
   /* Drop all model from the database */
-  await SpecieModel.remove({}, err => console.log(err));
-    // .then(docs => console.log(`${docs.length} species removed`))
-    // .catch(console.log);
-    // , (err) => {
-    // if (err) console.log(err);
-  // });
+  await SpecieModel.remove({}, (err) => {
+    if (err) console.log(err);
+  });
   console.log('All SpeciesModel removed from database');
   const speciesJson = await readFileAsync(path.join(__dirname, 'speciesList.json'), 'utf8');
   const species = JSON.parse(speciesJson);
