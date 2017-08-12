@@ -4,5 +4,18 @@
   "main": "index.js",
   "repository": "git@github.com:JohanCodinha/vicSpeciesApi.git",
   "author": "Johan Codinha",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint *.js"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.95.0",
+    "axios": "^0.16.2",
+    "eslint-plugin-import": "^2.7.0",
+    "mongoose": "^4.11.6"
+  },
+  "devDependencies": {
+    "eslint": "^3.19.0",
+    "eslint-config-airbnb-base": "^11.3.1"
+  }
 }

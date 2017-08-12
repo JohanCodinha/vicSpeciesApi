@@ -1,5 +1,6 @@
-let mongoose = require('mongoose');
-let specieShema = mongoose.Schema({
+const mongoose = require('mongoose');
+
+const specieShema = mongoose.Schema({
   taxonId: {
     type: Number,
     index: true,
@@ -28,14 +29,15 @@ let specieShema = mongoose.Schema({
     habitat: String,
     biology: String,
     general: String,
-    source: String
+    source: String,
   },
   conservationStatus: {
-    fpgAct: String,
+    ffgAct: String,
     epbcAct: String,
-    vicAdvisory: String
-  }
+    vicAdvisory: String,
+  },
 });
-let Specie = mongoose.model('Specie', specieShema);
+
+const Specie = mongoose.model('Specie', specieShema);
 
 module.exports = Specie;
