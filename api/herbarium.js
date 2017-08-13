@@ -46,14 +46,9 @@ async function searchHerbariumSpecies(taxonomy) {
       console.log(media);
       return {
         source: 'National Herbarium of Victoria',
-        // alternativeText: media.alternativeText,
-        medium: media.accessPoints.data
+        url: media.accessPoints.data
           .find(d => d.variant === 'preview').accessURI,
-        thumbnail: media.accessPoints.data
-          .find(d => d.variant === 'thumbnail').accessURI,
-        // caption: media.caption,
         creator: media.creator,
-        // source: media.source || 'Royal Botanic Garden Victoria',
       };
     }),
   };

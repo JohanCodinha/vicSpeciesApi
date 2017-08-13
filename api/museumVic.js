@@ -1,4 +1,4 @@
-let axios = require('axios');
+const axios = require('axios');
 
 function validateResponse (response, taxonomy) {
   const validSpecie = response.data.find((specie) => {
@@ -15,7 +15,9 @@ function validateResponse (response, taxonomy) {
     ? specie.taxonomy.commonName.toLowerCase()
     : undefined;
     const scientificNameMatch = resultScientificName === specieScientificName;
-    const commonNameMatch = resultCommonName === specieCommonName;
+    const commonNameMatch = resultCommonName !== undefined || specieCommonName !== undefined
+      ? resultCommonName === specieCommonName
+      : null;
     return scientificNameMatch || commonNameMatch;
   });
   return validSpecie || false;
@@ -34,7 +36,7 @@ const searchMuseumSpecies = async (taxonomy) => {
   const response = await fetchMuseumSpecies(taxonomy);
   const specie = validateResponse(response, taxonomy);
   if (!specie) return false;
-
+  console.log(specie);
   const specieData = {
     distribution: specie.distribution,
     habitat: specie.habitat,
@@ -43,11 +45,8 @@ const searchMuseumSpecies = async (taxonomy) => {
     images: specie.media.slice(0, specie.media.length - 1).map((media) => {
       const image = {
         alternativeText: media.alternativeText,
-        medium: media.medium
-          ? media.medium.uri
-          : null,
-        thumbnail: media.thumbnail
-          ? media.thumbnail.uri
+        url: media.large
+          ? media.large.uri
           : null,
         caption: media.caption,
         creator: media.creators[0],
