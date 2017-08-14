@@ -36,7 +36,7 @@ const searchMuseumSpecies = async (taxonomy) => {
   const response = await fetchMuseumSpecies(taxonomy);
   const specie = validateResponse(response, taxonomy);
   if (!specie) return false;
-  console.log(specie);
+  // console.log(specie);
   const specieData = {
     distribution: specie.distribution,
     habitat: specie.habitat,
@@ -54,7 +54,7 @@ const searchMuseumSpecies = async (taxonomy) => {
         licence: media.licence.shortName || media.licence.name || null,
       };
       return image;
-    }),
+    }).filter(image => image.url !== null),
   };
   return specieData;
 };

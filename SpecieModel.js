@@ -21,6 +21,7 @@ const specieShema = mongoose.Schema({
   },
   images: [{
     url: String,
+    s3Url: String,
     author: String,
     source: String,
   }],
@@ -36,6 +37,8 @@ const specieShema = mongoose.Schema({
     epbcAct: String,
     vicAdvisory: String,
   },
+  lastHydrated: Date,
+  lastUpdated: { type: Date, default: Date.now },
 });
 
 const Specie = mongoose.model('Specie', specieShema);

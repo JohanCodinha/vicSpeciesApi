@@ -54,6 +54,8 @@ function uploadFile(taxonId, image) {
       ContentType: contentType,
     }, (error, response) => {
       if (error) return reject(error);
+      /* eslint-disable no-param-reassign */
+      delete image.data;
       return resolve(Object.assign({},
         image,
         { s3Url: response.Location }));
@@ -88,73 +90,11 @@ function downloadFile(image) {
   });
 }
 
-async function hydrateSpecie({ scientificName, commonName, taxonType, taxonId }) {
-  const data = await fetchMetadata(scientificName, commonName, taxonType);
-  console.log(data);
-  console.log(`${taxonId} : ${data.images.length} image${data.images.length > 1 ? 's' : ''} found for ${commonName}`);
-  const description = {
-    source: (data.distribution ||
-      data.habitat || data.biology)
-      ? data.source
-      : undefined,
-    distribution: data.distribution || undefined,
-    habitat: data.habitat || undefined,
-    biology: data.biology || undefined,
-  };
-  if (data.images.length) {
-    const fetchAndUploadPromises = data.images
-      .map(image => new Promise(async (resolve, reject) => {
-        const imageUrl = image.url;
-        try {
-          if (!imageUrl) return resolve();
-          const downloadedImage = await downloadFile(imageUrl);
-          console.log(`Downloaded : ${/[^/]+(?=\/$|$)/.exec(imageUrl)[0]}`);
-          const hashName = crypto.createHash('md5').update(downloadedImage.data).digest('hex');
-          const fileName = `${hashName}_${taxonId}`;
-          const { Location: location } = await uploadFile(
-            fileName,
-            downloadedImage.data,
-            downloadedImage.contentType);
-          return resolve({
-            url: location,
-            source: image.source,
-            creator: image.creator,
-          });
-        } catch (error) {
-          return reject(error);
-        }
-      }));
-    try {
-      const images = await Promise.all(fetchAndUploadPromises)
-        .then(imgs => imgs.filter(img => img !== undefined));
-      return {
-        images,
-        description,
-      };
-      // const saved = await specie.update({ images, description });
-      // console.log(`${taxonId} | ${scientificName} update status: ${!!saved.ok}/n
-        // ${JSON.stringify(images.map(img => img.url))}`);
-    } catch (err) {
-      console.log(err);
-    }
-  }
-  return { description };
-   // else {
-    // try {
-      // return
-      // const saved = await specie.update({ description });
-      // console.log(saved);
-    // } catch (error) {
-      // console.log(error);
-    // }
-  // }
-}
-
-(async function asyncIIFE() {
-  const species = await Specie.find();
-  const {taxonId, scientificName, commonName, taxonType} = species[1203];
+async function hydrateSpecie(specie) {
+  const { taxonId, scientificName, commonName, taxonType } = specie;
   const metaData = await fetchMetadata(scientificName, commonName, taxonType);
-  const images = metaData.images;
+  // console.log(specie, metaData);
+  const images = metaData.images || [];
   const description = (metaData.distribution || metaData.habitat || metaData.biology)
   ? {
     source: metaData.source,
@@ -163,16 +103,41 @@ async function hydrateSpecie({ scientificName, commonName, taxonType, taxonId })
     biology: metaData.biology || undefined,
   }
   : undefined;
-  console.log(scientificName);
-  console.log(images);
-  console.log(description);
+  console.log(`${taxonId} | ${scientificName}`);
   try {
     const downloadPromises = images.map(image => downloadFile(image));
     const imagesWithFile = await Promise.all(downloadPromises);
     const uploadPromises = imagesWithFile.map(image => uploadFile(taxonId, image));
     const uploadedImage = await Promise.all(uploadPromises);
-    debugger;
+    const saved = await specie
+      .update({
+        $push: { images: { $each: uploadedImage } },
+        description,
+        lastHydrated: Date.now(),
+      });
+    console.log(`${saved.ok ? 'Updated' : 'Fail to update'} images: ${images.length} description: ${!!description}
+      ${uploadedImage.map(img => img.s3Url)}`);
   } catch (error) {
     console.log(error);
   }
-}());
+}
+
+// (async function asyncIIFE(){
+//   const specie = await Specie.find({taxonId: 903032});
+//   console.log(specie)
+//   await hydrateSpecie(specie[0]);
+// }());
+
+// (async function asyncIIFE(){
+//   const species = await Specie.find({});
+//   for (specie of species.slice(50, 55)) {
+//     await hydrateSpecie(specie);
+//   }
+// }());
+
+module.exports = {
+  fetchMetadata,
+  uploadFile,
+  downloadFile,
+  hydrateSpecie,
+};

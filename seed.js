@@ -7,10 +7,11 @@ const SpecieModel = require('./SpecieModel');
 const readFileAsync = util.promisify(fs.readFile);
 const db = mongoose.connection;
 
-mongoose.connect('mongodb://localhost:27017/species', {
+mongoose.connect('mongodb://localhost:27017/test', {
   useMongoClient: true,
 });
 mongoose.Promise = global.Promise;
+
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('openUri', () => {
   console.log('connected to db');
@@ -74,12 +75,16 @@ function formatJson(specie) {
   /* Drop all model from the database */
   await SpecieModel.remove({}, (err) => {
     if (err) console.log(err);
+    console.log('All SpeciesModel removed from database');
   });
-  console.log('All SpeciesModel removed from database');
   const speciesJson = await readFileAsync(path.join(__dirname, 'speciesList.json'), 'utf8');
   const species = JSON.parse(speciesJson);
   const speciesDocuments = species.map(formatJson);
-  SpecieModel.insertMany(speciesDocuments)
-    .then(docs => console.log(`Done: ${docs.length} species saved`))
-    .catch(console.log);
+  try {
+    SpecieModel.insertMany(speciesDocuments)
+      .then(docs => console.log(`Done: ${docs.length} species saved`))
+      .catch(console.log);
+  } catch (error) {
+    console.log(error);
+  }
 }());
