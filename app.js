@@ -1,50 +1,72 @@
-let fs = require('fs');
-let aws = require('aws-sdk');
-let mongoose = require('mongoose');
+const express = require('express');
+const mongoose = require('mongoose');
+const Specie = require('./SpecieModel');
 
-let BUCKET_NAME = 'vba-species-image';
+const { hydrateSpecie } = require('./hydrate');
+
+const app = express();
+
+const db = mongoose.connection;
+mongoose.connect('mongodb://localhost:27017/test', {
+  useMongoClient: true,
+});
+
 mongoose.Promise = global.Promise;
 
-mongoose.connect('mongodb://localhost:27017/test');
-aws.config.loadFromPath('./awsConfig.json');
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('openUri', () => {
+  console.log('connected to db');
+});
 
-let s3 = new aws.S3();
-let db = mongoose.connection;
-// db.on('error', console.error.bind(console, 'connection error:'));
-// db.once('openUri', function() {
-//   console.log('connected to db');
-// });
+app.get('/search', async (req, res) => {
+  const { query: seachQuery } = req.query;
+  if (!seachQuery) res.status(422).send('No query provided');
+  const regex = new RegExp(seachQuery, 'i');
+  try {
+    const result = await Specie.find({
+      $or: [
+        { commonName: regex },
+        { scientificName: regex },
+        { scientificNameSynonyme: regex },
+        { commonNameSynonyme: regex },
+      ],
+    }, {
+      _id: 0,
+      commonName: 1,
+      commonNameSynonyme: 1,
+      conservationStatus: 1,
+      scientificName: 1,
+      scientificNameSynonyme: 1,
+      discipline: 1,
+      images: 1,
+      parentTaxonID: 1,
+      taxonId: 1,
+      taxonType: 1,
+      shortName: 1,
+      authority: 1,
+      origin: 1,
+      description: 1,
+    }).limit(10);
+    res.json(result);
+  } catch (error) {
+    res.send(error);
+  }
+});
 
-// let specieShema = mongoose.Schema({
-//   taxonId: Number,
-//   commonName: String,
-//   scientificName: String,
-// });
+app.get('/taxon/:taxonId', async (req, res) => {
+  const { taxonId: taxonIdString } = req.params;
+  const taxonId = Number(taxonIdString);
+  if (!taxonId || Number.isNaN(taxonId)) res.status(422).send('No taxonId provided');
+  const [result] = await Specie.find({ taxonId });
+  if (result.lastHydrated) {
+    res.json(result);
+  } else {
+    await hydrateSpecie(taxonId);
+    const [hydratedResult] = await Specie.find({ taxonId });
+    res.json(hydratedResult);
+  } 
+});
 
-// let Specie = mongoose.model('Specie', specieShema);
-// let possum = new Specie({taxonId: 12, commonName: 'Longtail Possum'});
-// possum.save()
-//   .then(saved => console.log(saved))
-//   .catch(err => console.error(err));
-
-// Specie.find({taxonId: 12345}, (poss)=> console.log(poss));
-// Specie.find(function(err, species) {
-//   console.log(species);
-// });
-
-function uploadFile(remoteFilename, file) {
-  s3.putObject({
-    ACL: 'public-read',
-    Bucket: BUCKET_NAME,
-    Key: remoteFilename,
-    Body: file,
-    ContentType: 'image/jpg'
-  }, function(error, response) {
-    console.log(arguments);
-  });
-};
-
-fs.readFile('image.JPG', (err, data) => {
-  if (err) throw err;
-  uploadFile('testImage', data);
+app.listen(3000, () => {
+  console.log('Example app listening on port 3000!');
 });

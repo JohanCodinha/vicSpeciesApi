@@ -47,11 +47,11 @@ function formatJson(specie) {
     taxonType: specie.TAXON_TYPE || undefined,
     parentTaxonID: specie.PARENT_TAXON_ID || undefined,
     commonName: specie.COMMON_NAME || undefined,
-    commonNameSynonyme: specie.COMMON_NME_SYNONYM[0] === ''
+    commonNameSynonyme: specie.COMMON_NME_SYNONYM !== ''
       ? specie.COMMON_NME_SYNONYM.split(', ')
       : undefined,
     scientificName: specie.SCIENTIFIC_NAME,
-    scientificNameSynonyme: specie.SCIENTIFIC_NME_SYNONYM[0] === ''
+    scientificNameSynonyme: specie.SCIENTIFIC_NME_SYNONYM !== ''
       ? specie.SCIENTIFIC_NME_SYNONYM.split(', ')
       : undefined,
     shortName: specie.SHORT_NAME || undefined,

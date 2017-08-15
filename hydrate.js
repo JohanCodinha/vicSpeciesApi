@@ -90,8 +90,9 @@ function downloadFile(image) {
   });
 }
 
-async function hydrateSpecie(specie) {
-  const { taxonId, scientificName, commonName, taxonType } = specie;
+async function hydrateSpecie(taxonId) {
+  const [specie] = await Specie.find({ taxonId });
+  const { scientificName, commonName, taxonType } = specie;
   const metaData = await fetchMetadata(scientificName, commonName, taxonType);
   // console.log(specie, metaData);
   const images = metaData.images || [];
@@ -123,9 +124,8 @@ async function hydrateSpecie(specie) {
 }
 
 // (async function asyncIIFE(){
-//   const specie = await Specie.find({taxonId: 903032});
-//   console.log(specie)
-//   await hydrateSpecie(specie[0]);
+//   const specie = await Specie.find({});
+//   debugger;
 // }());
 
 // (async function asyncIIFE(){
