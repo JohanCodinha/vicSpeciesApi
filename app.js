@@ -5,7 +5,7 @@ const Specie = require('./SpecieModel');
 const { hydrateSpecie } = require('./hydrate');
 
 const app = express();
-
+const PORT = arguments[0];
 const db = mongoose.connection;
 mongoose.connect('mongodb://localhost:27017/taxonList', {
   useMongoClient: true,
@@ -36,10 +36,10 @@ const specieProjection = {
 };
 
 app.get('/search', async (req, res) => {
-  const { query: seachQuery } = req.query;
-  if (!seachQuery) res.status(422).send('No query provided');
-  const regex = new RegExp(seachQuery, 'i');
   try {
+    const { query: seachQuery } = req.query;
+    if (!seachQuery) return res.status(422).send('No query provided');
+    const regex = new RegExp(seachQuery, 'i');
     const result = await Specie.find({
       $or: [
         { commonName: regex },
@@ -49,21 +49,35 @@ app.get('/search', async (req, res) => {
       ],
     }, specieProjection).limit(10);
     result.forEach(specie => hydrateSpecie(specie.taxonId));
-    res.json(result);
+    return res.json(result);
   } catch (error) {
-    res.send(error);
+    console.log(error);
+    return res.send(error);
   }
 });
 
 app.get('/taxon/:taxonId', async (req, res) => {
-  const { taxonId: taxonIdString } = req.params;
-  const taxonId = Number(taxonIdString);
-  if (!taxonId || Number.isNaN(taxonId)) res.status(422).send('No taxonId provided');
-  await hydrateSpecie(taxonId);
-  const [result] = await Specie.find({ taxonId }, specieProjection);
-  res.json(result);
+  try {
+    const { taxonId: taxonIdString } = req.params;
+    const taxonId = Number(taxonIdString);
+    if (!taxonId || Number.isNaN(taxonId)) res.status(422).send('No taxonId provided');
+    await hydrateSpecie(taxonId);
+    const [result] = await Specie.find({ taxonId }, specieProjection);
+    res.json(result);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: 'The request failled',
+      error,
+    });
+  }
 });
 
-app.listen(3000, () => {
-  console.log('Example app listening on port 3000!');
-});
+try {
+  app.listen(PORT, () => {
+    console.log(`Example app listening on port ${PORT}`);
+  });
+} catch (error) {
+  console.log('could not start server');
+  console.log(error);
+}

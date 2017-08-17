@@ -103,7 +103,6 @@ function* displayUpdateStatus(numberOfItem) {
     yield numberStatusDisplayed += 1;
     readline.clearLine(process.stdout, 0);
   }
-  // return process.stdout.write('\n');
 }
 
 (async function asyncIIFE() {
@@ -123,17 +122,21 @@ function* displayUpdateStatus(numberOfItem) {
     const numberOfSpecies = species.length;
     const updateStatus = displayUpdateStatus(numberOfSpecies);
 
-    speciesDocuments.forEach((specieDocument) => {
-      SpecieModel.findOneAndUpdate(
-        { taxonId: specieDocument.taxonId },
-        specieDocument,
-        {
-          upsert: true,
-          new: true,
-          setDefaultsOnInsert: true })
-        .then(updateStatus.next());
-    });
+    const findAndUpdatePromises = speciesDocuments
+      .map(specieDocument => new Promise((resolve, reject) => {
+        SpecieModel.findOneAndUpdate(
+          { taxonId: specieDocument.taxonId },
+          specieDocument,
+          {
+            upsert: true,
+            new: true,
+            setDefaultsOnInsert: true })
+          .then((resolve(), updateStatus.next()))
+          .catch(reject);
+      }));
+    await Promise.all(findAndUpdatePromises);
     console.log('\n');
+    // console.log('done');
     process.exit();
   } catch (error) {
     console.log(error);
