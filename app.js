@@ -5,7 +5,7 @@ const Specie = require('./SpecieModel');
 const { hydrateSpecie } = require('./hydrate');
 
 const app = express();
-const PORT = arguments[0];
+const PORT = process.argv[2];
 const db = mongoose.connection;
 mongoose.connect('mongodb://localhost:27017/taxonList', {
   useMongoClient: true,
