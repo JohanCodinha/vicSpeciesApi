@@ -131,12 +131,15 @@ function* displayUpdateStatus(numberOfItem) {
             upsert: true,
             new: true,
             setDefaultsOnInsert: true })
-          .then((resolve(), updateStatus.next()))
+          .then((response) => {
+            updateStatus.next();
+            return resolve(response);
+          })
           .catch(reject);
       }));
     await Promise.all(findAndUpdatePromises);
     console.log('\n');
-    // console.log('done');
+    console.log('done');
     process.exit();
   } catch (error) {
     console.log(error);
