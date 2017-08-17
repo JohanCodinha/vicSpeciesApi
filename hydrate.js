@@ -11,7 +11,7 @@ aws.config.loadFromPath('./awsConfig.json');
 const s3 = new aws.S3();
 
 const db = mongoose.connection;
-mongoose.connect('mongodb://localhost:27017/test', {
+mongoose.connect('mongodb://localhost:27017/taxonList', {
   useMongoClient: true,
 });
 mongoose.Promise = global.Promise;
@@ -92,7 +92,7 @@ function downloadFile(image) {
 
 async function hydrateSpecie(taxonId) {
   const [specie] = await Specie.find({ taxonId });
-  if (specie.lastHydrated) return specie.lastHydrated; 
+  if (specie.lastHydrated) return specie.lastHydrated;
   const { scientificName, commonName, taxonType } = specie;
   const metaData = await fetchMetadata(scientificName, commonName, taxonType);
   const images = metaData.images || [];
@@ -121,6 +121,7 @@ async function hydrateSpecie(taxonId) {
     return saved;
   } catch (error) {
     console.log(error);
+    throw new Error(error.message);
   }
 }
 
