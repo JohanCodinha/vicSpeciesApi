@@ -92,9 +92,9 @@ function downloadFile(image) {
 
 async function hydrateSpecie(taxonId) {
   const [specie] = await Specie.find({ taxonId });
+  if (specie.lastHydrated) return specie.lastHydrated; 
   const { scientificName, commonName, taxonType } = specie;
   const metaData = await fetchMetadata(scientificName, commonName, taxonType);
-  // console.log(specie, metaData);
   const images = metaData.images || [];
   const description = (metaData.distribution || metaData.habitat || metaData.biology)
   ? {
@@ -118,6 +118,7 @@ async function hydrateSpecie(taxonId) {
       });
     console.log(`${saved.ok ? 'Updated' : 'Fail to update'} images: ${images.length} description: ${!!description}
       ${uploadedImage.map(img => img.s3Url)}`);
+    return saved;
   } catch (error) {
     console.log(error);
   }
@@ -130,9 +131,10 @@ async function hydrateSpecie(taxonId) {
 
 // (async function asyncIIFE(){
 //   const species = await Specie.find({});
-//   for (specie of species.slice(50, 55)) {
-//     await hydrateSpecie(specie);
+//   for (specie of species.slice(0, 100)) {
+//     await hydrateSpecie(specie.taxonId);
 //   }
+//   console.log('DONE');
 // }());
 
 module.exports = {

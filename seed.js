@@ -3,11 +3,17 @@ const path = require('path');
 const util = require('util');
 const mongoose = require('mongoose');
 const SpecieModel = require('./SpecieModel');
+const readline = require('readline');
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
 
 const readFileAsync = util.promisify(fs.readFile);
 const db = mongoose.connection;
 
-mongoose.connect('mongodb://localhost:27017/test', {
+mongoose.connect('mongodb://localhost:27017/taxonList', {
   useMongoClient: true,
 });
 mongoose.Promise = global.Promise;
@@ -71,19 +77,64 @@ function formatJson(specie) {
   return specieDocument;
 }
 
-(async function asyncIIFE() {
-  /* Drop all model from the database */
-  await SpecieModel.remove({}, (err) => {
-    if (err) console.log(err);
-    console.log('All SpeciesModel removed from database');
+function askYesNo(question) {
+  return new Promise((resolve) => {
+    rl.question(`${question} [y/n]`, ((response) => {
+      switch (response) {
+        case 'y':
+        case 'yes':
+          resolve(true);
+          break;
+        case 'n':
+        case 'no':
+          resolve(false);
+          break;
+        default:
+          resolve(askYesNo(question));
+      }
+    }));
   });
-  const speciesJson = await readFileAsync(path.join(__dirname, 'speciesList.json'), 'utf8');
-  const species = JSON.parse(speciesJson);
-  const speciesDocuments = species.map(formatJson);
+}
+
+function* displayUpdateStatus(numberOfItem) {
+  let numberStatusDisplayed = 1;
+  while (numberStatusDisplayed <= numberOfItem) {
+    process.stdout.write(`\r${numberStatusDisplayed} / ${numberOfItem}`);
+    yield numberStatusDisplayed += 1;
+    readline.clearLine(process.stdout, 0);
+  }
+  // return process.stdout.write('\n');
+}
+
+(async function asyncIIFE() {
   try {
-    SpecieModel.insertMany(speciesDocuments)
-      .then(docs => console.log(`Done: ${docs.length} species saved`))
-      .catch(console.log);
+    const removeAllSpecie = await askYesNo(
+      'Drop all taxon data from database ?',
+    );
+    if (removeAllSpecie) {
+      const { result } = await SpecieModel.remove({});
+      console.log(result.ok
+        ? 'All SpeciesModel removed from database'
+        : 'Error while droping SpeciesModel from database');
+    }
+    const speciesJson = await readFileAsync(path.join(__dirname, 'speciesList.json'), 'utf8');
+    const species = JSON.parse(speciesJson);
+    const speciesDocuments = species.map(formatJson);
+    const numberOfSpecies = species.length;
+    const updateStatus = displayUpdateStatus(numberOfSpecies);
+
+    speciesDocuments.forEach((specieDocument) => {
+      SpecieModel.findOneAndUpdate(
+        { taxonId: specieDocument.taxonId },
+        specieDocument,
+        {
+          upsert: true,
+          new: true,
+          setDefaultsOnInsert: true })
+        .then(updateStatus.next());
+    });
+    console.log('\n');
+    process.exit();
   } catch (error) {
     console.log(error);
   }
