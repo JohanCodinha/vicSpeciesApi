@@ -41,7 +41,7 @@ async function fetchMetadata(scientificName, commonName, taxonType) {
 
 function uploadFile(taxonId, image) {
   const { data, contentType } = image;
-  const BUCKET_NAME = 'vba-species-image';
+  const BUCKET_NAME = 'vba-species-images';
   const imageBuffer = new Buffer(data, 'binary');
   const hashName = crypto.createHash('md5').update(data).digest('hex');
   const fileName = `${hashName}_${taxonId}`;
