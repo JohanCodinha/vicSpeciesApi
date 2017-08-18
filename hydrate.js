@@ -58,7 +58,8 @@ function uploadFile(taxonId, image) {
       delete image.data;
       return resolve(Object.assign({},
         image,
-        { s3Url: response.Location }));
+        { s3Name: fileName,
+          s3Url: response.Location }));
     });
   });
 }
@@ -93,6 +94,7 @@ function downloadFile(image) {
 async function hydrateSpecie(taxonId) {
   const [specie] = await Specie.find({ taxonId });
   if (specie.lastHydrated) return specie.lastHydrated;
+  await specie.update({ lastHydrated: Date.now() });
   const { scientificName, commonName, taxonType } = specie;
   const metaData = await fetchMetadata(scientificName, commonName, taxonType);
   const images = metaData.images || [];
@@ -104,7 +106,6 @@ async function hydrateSpecie(taxonId) {
     biology: metaData.biology || undefined,
   }
   : undefined;
-  console.log(`${taxonId} | ${scientificName}`);
   try {
     const downloadPromises = images.map(image => downloadFile(image));
     const imagesWithFile = await Promise.all(downloadPromises);
@@ -112,31 +113,20 @@ async function hydrateSpecie(taxonId) {
     const uploadedImage = await Promise.all(uploadPromises);
     const saved = await specie
       .update({
-        $push: { images: { $each: uploadedImage } },
+        images: uploadedImage,
         description,
         lastHydrated: Date.now(),
       });
+    console.log(`${taxonId} | ${scientificName}`);
     console.log(`${saved.ok ? 'Updated' : 'Fail to update'} images: ${images.length} description: ${!!description}
-      ${uploadedImage.map(img => img.s3Url)}`);
+      ${uploadedImage.map(img => `${img.s3Url}\n`)}`);
     return saved;
   } catch (error) {
     console.log(error);
+    await specie.update({ lastHydrated: undefined });
     throw new Error(error.message);
   }
 }
-
-// (async function asyncIIFE(){
-//   const specie = await Specie.find({});
-//   debugger;
-// }());
-
-// (async function asyncIIFE(){
-//   const species = await Specie.find({});
-//   for (specie of species.slice(0, 100)) {
-//     await hydrateSpecie(specie.taxonId);
-//   }
-//   console.log('DONE');
-// }());
 
 module.exports = {
   fetchMetadata,

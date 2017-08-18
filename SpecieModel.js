@@ -20,8 +20,10 @@ const specieShema = mongoose.Schema({
     all: [String],
   },
   images: [{
+    _id: false,
     url: String,
     s3Url: String,
+    s3Name: String,
     author: String,
     source: String,
   }],
