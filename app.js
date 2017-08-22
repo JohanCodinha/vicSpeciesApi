@@ -66,8 +66,9 @@ app.get('/taxon/:taxonId', async (req, res) => {
     const { taxonId: taxonIdString } = req.params;
     const taxonId = Number(taxonIdString);
     if (!taxonId || Number.isNaN(taxonId)) return res.status(422).send('No taxonId provided');
-    await hydrateSpecie(taxonId);
     const [result] = await Specie.find({ taxonId }, specieProjection);
+    if (!result) return res.status(404).send('Specie not found');
+    hydrateSpecie(taxonId);
     return res.json(result);
   } catch (error) {
     console.log(error);
