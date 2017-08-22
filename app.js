@@ -1,11 +1,16 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Specie = require('./SpecieModel');
+const cors = require('cors');
 
 const { hydrateSpecie } = require('./hydrate');
 
 const app = express();
+app.use(cors());
+
 const PORT = process.argv[2];
+if (PORT === undefined) process.exit(new Error('missing port argument'));
+
 const db = mongoose.connection;
 mongoose.connect('mongodb://localhost:27017/taxonList', {
   useMongoClient: true,
