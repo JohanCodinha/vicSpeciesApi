@@ -9,7 +9,10 @@ const app = express();
 app.use(cors());
 
 const PORT = process.argv[2];
-if (PORT === undefined) process.exit(new Error('missing port argument'));
+if (PORT === undefined) {
+  console.log(new Error('port argument is undefined'));
+  process.exit(1);
+}
 
 const db = mongoose.connection;
 mongoose.connect('mongodb://localhost:27017/taxonList', {
