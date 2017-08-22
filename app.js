@@ -65,13 +65,13 @@ app.get('/taxon/:taxonId', async (req, res) => {
   try {
     const { taxonId: taxonIdString } = req.params;
     const taxonId = Number(taxonIdString);
-    if (!taxonId || Number.isNaN(taxonId)) res.status(422).send('No taxonId provided');
+    if (!taxonId || Number.isNaN(taxonId)) return res.status(422).send('No taxonId provided');
     await hydrateSpecie(taxonId);
     const [result] = await Specie.find({ taxonId }, specieProjection);
-    res.json(result);
+    return res.json(result);
   } catch (error) {
     console.log(error);
-    res.status(500).json({
+    return res.status(500).json({
       message: 'The request failled',
       error,
     });
