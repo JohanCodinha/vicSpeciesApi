@@ -82,6 +82,25 @@ app.get('/taxon/:taxonId', async (req, res) => {
   }
 });
 
+app.get('/taxon/:taxonId/image', async (req, res) => {
+  try {
+    const { taxonId: taxonIdString } = req.params;
+    const taxonId = Number(taxonIdString);
+    if (!taxonId || Number.isNaN(taxonId)) return res.status(422).send('No taxonId provided');
+    const [result] = await Specie.find({ taxonId }, specieProjection);
+    if (!result) return res.status(404).send('Specie not found');
+    hydrateSpecie(taxonId);
+    if (result.images.length) return res.redirect(result.images[0].s3Url);
+    return res.status(404).send(`No image available for ${taxonId}`);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: 'The request failled',
+      error,
+    });
+  }
+});
+
 try {
   app.listen(PORT, () => {
     console.log(`Example app listening on port ${PORT}`);
