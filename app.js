@@ -43,10 +43,28 @@ const specieProjection = {
   description: 1,
 };
 
+function formatDiscipline(discipline) {
+  switch (discipline) {
+    case 'fauna':
+      return 'Terrestrial fauna';
+    case 'flora':
+      return 'Flora';
+    case 'marine':
+      return 'Marine';
+    default:
+      return new RegExp(/[\s\S]*/);
+  }
+}
+
 app.get('/search', async (req, res) => {
   try {
-    const { query: seachQuery } = req.query;
+    const {
+      query: seachQuery,
+      discipline = 'all',
+    } = req.query;
+    console.log(`searchd: ${seachQuery} | ${discipline}`);
     if (!seachQuery) return res.status(422).send('No query provided');
+    const primaryDiscipline = formatDiscipline(discipline);
     const regex = new RegExp(seachQuery, 'i');
     const result = await Specie.find({
       $or: [
@@ -55,7 +73,10 @@ app.get('/search', async (req, res) => {
         { scientificNameSynonyme: regex },
         { commonNameSynonyme: regex },
       ],
-    }, specieProjection).limit(10);
+      'discipline.primary': primaryDiscipline,
+    }, specieProjection)
+      // .where('discipline.primary').equals(primaryDiscipline)
+      .limit(15);
     result.forEach(specie => hydrateSpecie(specie.taxonId));
     return res.json(result);
   } catch (error) {
