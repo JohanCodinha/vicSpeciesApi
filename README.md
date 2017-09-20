@@ -24,11 +24,16 @@ Run hydrate.js to fetch species information and hydrate the database.
 ```
 
  Search for species by name, can be filtered by discipline.
-
+ 
+ Http parameters:
+```
+ query : The search query
+ discipline : Optional with one of those value: fauna | flora | marine | all
+```
 **Example Request:**
 
 ```
-https://vbago.science/api/search?query=wombat&discipline=flora
+https://vbago.science/api/search?query=wombat&discipline=fauna
 ```
 
 **Success Response:**
@@ -120,9 +125,8 @@ HTTP/1.1 200 OK
       ]
    }
 ]
-
+```
 ### Prerequisites
-
 
 ```
 Give examples
