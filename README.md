@@ -13,6 +13,114 @@ A running mongoDb instance need to be running.
 Run seed.js with node to build the database.
 Run hydrate.js to fetch species information and hydrate the database.
 
+## API How To's
+```
+ https://vbago.science/api
+```
+### Search for species (autocomplete)
+
+```
+ GET /search?query=wombat
+```
+
+ Search for species by name, can be filtered by discipline.
+
+**Example Request:**
+
+```
+https://vbago.science/api/search?query=wombat&discipline=flora
+```
+
+**Success Response:**
+
+```
+HTTP/1.1 200 OK
+```  
+```json
+[  
+   {  
+      "taxonId":528541,
+      "taxonType":"Mammals",
+      "parentTaxonID":528540,
+      "commonName":"Southern Hairy-nosed Wombat",
+      "scientificName":"Lasiorhinus latifrons",
+      "shortName":null,
+      "origin":null,
+      "authority":null,
+      "conservationStatus":{  
+         "vicAdvisory":null,
+         "epbcAct":null,
+         "ffgAct":null
+      },
+      "description":null,
+      "images":[  
+         {  
+            "s3Url":"https://vba-species-images.s3-ap-southeast-2.amazonaws.com/71550629c9849bbaf86c748e0a193ebe_528541",
+            "s3Name":"71550629c9849bbaf86c748e0a193ebe_528541",
+            "source":"Atlas of Living Australia",
+            "url":"https://images.ala.org.au/image/proxyImage?imageId=cddc295f-1f61-411f-a9a8-728f6cda31ce"
+         }
+      ],
+      "discipline":{  
+         "primary":"Terrestrial fauna",
+         "all":[  
+            "Terrestrial fauna"
+         ]
+      },
+      "scientificNameSynonyme":[  
+         "Lasiorhinus latifrons"
+      ],
+      "commonNameSynonyme":[  
+         "Southern Hairy-nosed Wombats"
+      ]
+   },
+   {  
+      "taxonId":11165,
+      "taxonType":"Mammals",
+      "parentTaxonID":527360,
+      "commonName":"Common Wombat",
+      "scientificName":"Vombatus ursinus",
+      "shortName":null,
+      "origin":null,
+      "authority":null,
+      "conservationStatus":{  
+         "vicAdvisory":null,
+         "epbcAct":null,
+         "ffgAct":null
+      },
+      "description":{  
+         "source":null,
+         "distribution":"South-eastern mainland Australia and Tasmania.",
+         "habitat":"Dry and wet forest, woodland and coastal heath.",
+         "biology":"Common Wombats dig burrows with their sharp claws and powerful short limbs. They have rear-facing pouches to keep them from filling with dirt while digging. In winter, females give birth to a single young. Wombats' teeth grow in response to wear. They are largely nocturnal. They occasionally enter people's tents at campsites looking for food."
+      },
+      "images":[  
+         {  
+            "s3Url":"https://vba-species-images.s3-ap-southeast-2.amazonaws.com/f4e28e5f9471a935bc855eb0ee435f81_11165",
+            "s3Name":"f4e28e5f9471a935bc855eb0ee435f81_11165",
+            "source":"Parks Victoria",
+            "url":"https://collections.museumvictoria.com.au/content/media/28/361528-large.jpg"
+         },
+         {  
+            "s3Url":"https://vba-species-images.s3-ap-southeast-2.amazonaws.com/fb3373b8130a5cfbf9ec1764eae27486_11165",
+            "s3Name":"fb3373b8130a5cfbf9ec1764eae27486_11165",
+            "source":"Gary Lewis",
+            "url":"https://collections.museumvictoria.com.au/content/media/33/360433-large.jpg"
+         }
+      ],
+      "discipline":{  
+         "primary":"Terrestrial fauna",
+         "all":[  
+            "Terrestrial fauna"
+         ]
+      },
+      "scientificNameSynonyme":null,
+      "commonNameSynonyme":[  
+         "Common Wombat"
+      ]
+   }
+]
+
 ### Prerequisites
 
 
