@@ -62,7 +62,7 @@ app.get('/search', async (req, res) => {
       query: seachQuery,
       discipline = 'all',
     } = req.query;
-    console.log(`searchd: ${seachQuery} | ${discipline}`);
+    console.log(`/search query: ${seachQuery} | ${discipline}`);
     if (!seachQuery) return res.status(422).send('No query provided');
     const primaryDiscipline = formatDiscipline(discipline);
     const regex = new RegExp(seachQuery, 'i');
