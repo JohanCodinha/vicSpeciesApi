@@ -122,22 +122,18 @@ function* displayUpdateStatus(numberOfItem) {
     const numberOfSpecies = species.length;
     const updateStatus = displayUpdateStatus(numberOfSpecies);
 
-    const findAndUpdatePromises = speciesDocuments
-      .map(specieDocument => new Promise((resolve, reject) => {
-        SpecieModel.findOneAndUpdate(
-          { taxonId: specieDocument.taxonId },
-          specieDocument,
-          {
-            upsert: true,
-            new: true,
-            setDefaultsOnInsert: true })
-          .then((response) => {
-            updateStatus.next();
-            return resolve(response);
-          })
-          .catch(reject);
-      }));
-    await Promise.all(findAndUpdatePromises);
+    for ( specieDocument of speciesDocuments) {
+      await SpecieModel.findOneAndUpdate(
+        { taxonId: specieDocument.taxonId },
+        specieDocument,
+        {
+          upsert: true,
+          new: true,
+          setDefaultsOnInsert: true })
+        .then((response) => {
+          updateStatus.next();
+        })
+    }
     console.log('\n');
     console.log('done');
     process.exit();
